@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<style>
+canvas 
+{
+    border:1px solid black;
+    margin-top: 60px;
+	margin-left: 60px;
+}
+h2
+{
+	font-style: oblique;
+	color: #5cb85c;
+	font-size: 45px;
+	font-weight: bold;
+}
+footer
+{
+	background: white;   
+    height: 20px;
+    margin-top: 40px;
+    bottom: none;
+}
+p
+{
+	font-weight: bold;
+	color: white;
+}
+.name
+{
+
+	font-style: oblique;
+	font-weight: bold;
+	font-size: 0.9em;
+	color: white;
+	align-self: center;
+}
+</style>
+</head>
+<body onload="start()">
+<script>
+/*
+	hey there, please send your feedbacks,suggestions at sawantshubham571@gmail.com thankyou. 
+*/
+
+//variables
+var pause,state,cwidth,cheight,score,grid,fac,bwidth,bheight,frate,snake,orient;
+//for play
+function start()
+{
+	startgame();
+}
+
+//for play again
+function again()
+{
+	window.location.reload();
+}
+
+//initializing values
+function initialize()
+{
+	scr = 0;
+	fac = 20;
+	state = 1;
+	cwidth=400;
+	cheight=400;
+	grid=[];
+	snake = [];
+	bwidth=cwidth/fac;	bheight=cheight/fac;
+	frate = 20;
+	orient="hor";
+}
+
+//starting game
+function startgame()
+{
+	initialize();
+    gamearea.start();
+   // score = new component("scr","25px","Arial","black",spos,spos,"text");
+    pause = new component("scr","25px","Arial","black",cwidth/2,cheight/2,"text");
+    var i,j=0;
+    for(j=0;j<20;j++)
+	    for(i=0;i<20;i++)
+	    {
+	    		grid.push(new component("box"+i,bwidth,bheight,"img/bg.jpg",i*fac,j*20,"image"));
+
+	    }
+    snake.push(new component("snake"+j,bwidth,bheight,"img/sface.jpg",0,0,"image"));
+    for(j=1;j<5;j++)
+    	snake.push(new component("snake"+j,bwidth,bheight,"img/snake.jpg",j*fac,0,"image"));
+	
+}
+
+//creating canvas as game area
+var gamearea =
+{
+    canvas : document.createElement("canvas"),
+    start : function() 
+    {
+        this.canvas.width = cwidth;
+        this.canvas.height = cheight;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+		this.frameNo = 0;
+        this.interval = setInterval(updategamearea, frate);
+        window.addEventListener('keydown', function (e)
+        {
+            gamearea.key = e.keyCode;
+        })
+        window.addEventListener('keyup', function (e) 
+        {
+            gamearea.key = false;
+        })
+    }, 
+    clear : function()
+    {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    stop : function() 
+    {
+        clearInterval(this.interval);
+    }
+}
+
+function everyinterval(n) 
+{
+    if ((gamearea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+
+//const for every other object on screen
+function component(name, width, height, color, x, y, type)
+{
+	this.name = name;
+	this.type = type;
+	
+	if (type == "image")
+	{
+		this.image = new Image();
+		this.image.src = color;
+	}
+	if(type == "text")
+	{
+		this.text = "";
+	}
+	this.gamearea = gamearea;
+	this.width = width;
+	this.height = height;
+	this.speedX = 0;
+	this.speedY = 0;    
+	this.x = x;
+	this.y = y;    
+	
+	this.update = function()
+	{
+		ctx = gamearea.context;		
+		if (this.type == "text")
+		{		
+			ctx.font = this.width + " " + this.height;
+			ctx.fillStyle = color;
+			ctx.fillText(this.text, this.x, this.y);
+		} 
+
+		if (this.type == "image")
+		{
+			ctx.drawImage(this.image,this.x,this.y,this.width, this.height);
+		} 
+		
+		if(this.type == "block") 
+		{
+			ctx.fillStyle = color;
+			ctx.fillRect(this.x, this.y, this.width, this.height);
+		}
+	}
+
+	this.clicked = function() {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var clicked = true;
+        if ((mybottom < gamearea.y) || (mytop > gamearea.y)
+         || (myright < gamearea.x) || (myleft > gamearea.x)) {
+            clicked = false;
+        }
+        return clicked;
+    }
+
+	this.newpos = function()
+	{
+		var maxX=cwidth,minX=0;
+		if(this.name == "b1")
+		{	maxX=maxX1; minX=minX1;	}
+
+		if(this.name == "b2")
+		{	minX=minX2; maxX=maxX2;	}
+
+		if(this.x + this.speedX <= maxX && this.x + this.speedX >=minX && this.y + this.speedY <=maxY && this.y + this.speedY >=minY)
+		{  
+			this.x += this.speedX;
+			this.y += this.speedY;        
+		}
+	}
+
+	this.crashwith = function(otherobj)
+	{
+		var myleft = this.x;
+		var myright = this.x + (this.width);
+		var mytop = this.y;
+		var mybottom = this.y + (this.height);
+		var otherleft = otherobj.x;
+		var otherright = otherobj.x + (otherobj.width);
+		var othertop = otherobj.y;
+		var otherbottom = otherobj.y + (otherobj.height);
+		var crash = true;
+
+		if(myright<=bar2.x && myleft>=bar1.x+bar1.width)
+			crash = false;
+		else
+		{
+			if ((mybottom < othertop) ||  (mytop > otherbottom) ||(myright < otherleft) || (myleft > otherright))
+				crash = false;
+		}
+		return crash;
+	}
+}
+
+//const for sound
+function sound(name,src) 
+{
+    this.sound = document.createElement("audio");
+    this.sound.id = name;
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    if(this.name=="bgmusic"){this.sound.loop = true;}
+    document.body.appendChild(this.sound);
+    this.play = function(){
+        this.sound.play();
+    }
+    this.stop = function(){
+        this.sound.pause();
+    }
+}
+
+
+//updates game area
+function updategamearea() 
+{
+
+	//pause-unpause
+	if (gamearea.key && gamearea.key == 32)
+	{
+		if(state==1) state = 0; else state=1;
+	}
+
+	//if not paused
+	if(state)
+	{
+		var x, y;
+		gamearea.clear();
+		//score.update();
+		var i;
+	    for(i=0;i<400;i++)
+	    {
+	    	grid[i].update();
+	    }
+	    for(i=0;i<5;i++)
+	    {
+	    	snake[i].update();
+	    }
+
+		if (gamearea.key && gamearea.key == 37) motion=4;
+		if (gamearea.key && gamearea.key == 39) motion=4;
+		if (gamearea.key && gamearea.key == 3) motion=4;
+		if (gamearea.key && gamearea.key == 37) motion=4;
+	}
+	else
+	{
+		//if paused
+		pause.text = "Paused";
+		pause.update();
+		//score.update();
+	}
+}
+
+
+
+</script>
+</body>
+</html>
